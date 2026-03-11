@@ -258,8 +258,8 @@ MIT License — see [LICENSE](LICENSE) for details.
 **Tappatla Sujit Goud**
 - 🎓 B.Tech AI & ML — GRIET Hyderabad (2021–2025)
 - 📧 sujitgoud30@gmail.com
-- 💼 [LinkedIn](https://linkedin.com/in/sujitgoud)
-- 🐙 [GitHub](https://github.com/sujitgoud30)
+- 💼 [LinkedIn]([https://linkedin.com/in/sujitgoud](https://www.linkedin.com/in/sujit-t-b78041224))
+- 🐙 [GitHub]([https://github.com/sujitgoud30](https://github.com/bob2044))
 
 ---
 
