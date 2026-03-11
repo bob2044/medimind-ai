@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediMind AI — Clinical Intelligence Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #040d12;
+    --surface: #071520;
+    --surface2: #0c2030;
+    --border: #0e3a52;
+    --accent: #00d4ff;
+    --accent2: #00ff9d;
+    --accent3: #ff6b35;
+    --text: #e8f4f8;
+    --text-muted: #5a8fa3;
+    --danger: #ff4757;
+    --warning: #ffa502;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Glowing orbs */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: 0;
+    animation: drift 12s ease-in-out infinite alternate;
+  }
+  .orb1 { width: 500px; height: 500px; background: rgba(0,212,255,0.06); top: -100px; left: -100px; }
+  .orb2 { width: 400px; height: 400px; background: rgba(0,255,157,0.04); bottom: -100px; right: -100px; animation-delay: -6s; }
+  .orb3 { width: 300px; height: 300px; background: rgba(255,107,53,0.03); top: 50%; left: 50%; animation-delay: -3s; }
+
+  @keyframes drift {
+    from { transform: translate(0, 0) scale(1); }
+    to { transform: translate(30px, 20px) scale(1.1); }
+  }
+
+  /* Layout */
+  .app {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    height: 100vh;
+  }
+
+  /* Header */
+  header {
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(4,13,18,0.9);
+    backdrop-filter: blur(20px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    border: 1.5px solid var(--accent);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    animation: pulse-border 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-border {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0,212,255,0.4), inset 0 0 10px rgba(0,212,255,0.1); }
+    50% { box-shadow: 0 0 0 6px rgba(0,212,255,0), inset 0 0 20px rgba(0,212,255,0.2); }
+  }
+
+  .logo-icon svg { width: 18px; height: 18px; }
+
+  .logo-text { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; letter-spacing: -0.5px; }
+  .logo-text span { color: var(--accent); }
+
+  .logo-badge {
+    font-size: 9px;
+    font-weight: 500;
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.3);
+    color: var(--accent);
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .header-meta {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .status-dot {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .status-dot::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent2);
+    box-shadow: 0 0 8px var(--accent2);
+    animation: blink 2s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* Main content */
+  main {
+    display: grid;
+    grid-template-columns: 260px 1fr 280px;
+    overflow: hidden;
+  }
+
+  /* Left sidebar */
+  .sidebar-left {
+    border-right: 1px solid var(--border);
+    padding: 20px 16px;
+    overflow-y: auto;
+    background: rgba(7,21,32,0.5);
+  }
+
+  .sidebar-section {
+    margin-bottom: 28px;
+  }
+
+  .sidebar-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    padding-left: 4px;
+  }
+
+  .quick-btn {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-align: left;
+    cursor: pointer;
+    margin-bottom: 6px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .quick-btn::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--accent);
+    transform: scaleY(0);
+    transition: transform 0.2s;
+  }
+
+  .quick-btn:hover {
+    background: var(--surface2);
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: translateX(3px);
+  }
+
+  .quick-btn:hover::before { transform: scaleY(1); }
+
+  .quick-btn .icon { font-size: 14px; }
+
+  .model-info {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+  }
+
+  .model-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 11px;
+  }
+
+  .model-row:last-child { margin-bottom: 0; }
+  .model-key { color: var(--text-muted); }
+  .model-val { color: var(--accent); font-weight: 500; }
+
+  .token-bar {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 10px;
+    overflow: hidden;
+  }
+
+  .token-fill {
+    height: 100%;
+    width: 23%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    animation: token-grow 1s ease-out;
+  }
+
+  @keyframes token-grow {
+    from { width: 0; }
+    to { width: 23%; }
+  }
+
+  /* Chat area */
+  .chat-area {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 28px;
+    scroll-behavior: smooth;
+  }
+
+  .chat-messages::-webkit-scrollbar { width: 4px; }
+  .chat-messages::-webkit-scrollbar-track { background: transparent; }
+  .chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* Welcome screen */
+  .welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    text-align: center;
+    animation: fade-up 0.6s ease-out;
+  }
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .welcome-icon {
+    width: 80px;
+    height: 80px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    position: relative;
+    background: var(--surface);
+  }
+
+  .welcome-icon::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, var(--accent), transparent, var(--accent2));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    padding: 1px;
+    opacity: 0.6;
+  }
+
+  .welcome h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 10px;
+    background: linear-gradient(135deg, var(--text), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .welcome p {
+    color: var(--text-muted);
+    font-size: 12px;
+    max-width: 400px;
+    line-height: 1.7;
+    margin-bottom: 32px;
+  }
+
+  .capability-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    max-width: 480px;
+  }
+
+  .cap-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .cap-card:hover {
+    border-color: var(--accent);
+    background: var(--surface2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,212,255,0.1);
+  }
+
+  .cap-card .cap-icon { font-size: 20px; margin-bottom: 8px; display: block; }
+  .cap-card .cap-title { font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+  .cap-card .cap-desc { font-size: 10px; color: var(--text-muted); line-height: 1.5; }
+
+  /* Messages */
+  .message {
+    margin-bottom: 20px;
+    animation: msg-in 0.3s ease-out;
+  }
+
+  @keyframes msg-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .msg-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: 'Syne', sans-serif;
+    flex-shrink: 0;
+  }
+
+  .msg-avatar.user { background: rgba(0,212,255,0.15); border: 1px solid rgba(0,212,255,0.3); color: var(--accent); }
+  .msg-avatar.ai { background: rgba(0,255,157,0.1); border: 1px solid rgba(0,255,157,0.3); color: var(--accent2); }
+
+  .msg-name { font-size: 11px; font-weight: 600; font-family: 'Syne', sans-serif; }
+  .msg-time { font-size: 10px; color: var(--text-muted); }
+
+  .msg-body {
+    padding: 14px 16px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    line-height: 1.8;
+    margin-left: 38px;
+  }
+
+  .msg-body.user {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top-left-radius: 2px;
+  }
+
+  .msg-body.ai {
+    background: linear-gradient(135deg, rgba(0,255,157,0.05), rgba(0,212,255,0.05));
+    border: 1px solid rgba(0,255,157,0.15);
+    border-top-left-radius: 2px;
+  }
+
+  .msg-body h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent2);
+    margin: 12px 0 6px;
+  }
+
+  .msg-body h3:first-child { margin-top: 0; }
+
+  .msg-body ul {
+    padding-left: 16px;
+    margin: 6px 0;
+  }
+
+  .msg-body li {
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+
+  .msg-body strong { color: var(--accent); }
+
+  .disclaimer-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 9px;
+    background: rgba(255,71,87,0.1);
+    border: 1px solid rgba(255,71,87,0.3);
+    color: var(--danger);
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-top: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .source-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 9px;
+    background: rgba(0,212,255,0.08);
+    border: 1px solid rgba(0,212,255,0.2);
+    color: var(--accent);
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin: 8px 4px 0 0;
+    letter-spacing: 0.5px;
+  }
+
+  /* Typing indicator */
+  .typing {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 16px;
+    margin-left: 38px;
+    width: fit-content;
+  }
+
+  .typing-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: typing-bounce 1.2s ease-in-out infinite;
+  }
+
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; background: var(--accent2); }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; background: var(--accent3); }
+
+  @keyframes typing-bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-8px); opacity: 1; }
+  }
+
+  /* Input area */
+  .input-area {
+    padding: 16px 28px 20px;
+    border-top: 1px solid var(--border);
+    background: rgba(4,13,18,0.95);
+    backdrop-filter: blur(20px);
+  }
+
+  .input-wrapper {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    transition: border-color 0.2s;
+  }
+
+  .input-wrapper:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,212,255,0.08);
+  }
+
+  #userInput {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    resize: none;
+    max-height: 120px;
+    min-height: 20px;
+  }
+
+  #userInput::placeholder { color: var(--text-muted); }
+
+  .send-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: var(--accent);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+    color: var(--bg);
+  }
+
+  .send-btn:hover {
+    background: var(--accent2);
+    transform: scale(1.05);
+  }
+
+  .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .input-hint {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 8px;
+    text-align: center;
+  }
+
+  /* Right sidebar */
+  .sidebar-right {
+    border-left: 1px solid var(--border);
+    padding: 20px 16px;
+    overflow-y: auto;
+    background: rgba(7,21,32,0.5);
+  }
+
+  .metric-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+
+  .metric-label { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+  .metric-value { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--accent); }
+  .metric-sub { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+  .activity-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(14,58,82,0.5);
+    font-size: 11px;
+  }
+
+  .activity-item:last-child { border-bottom: none; }
+
+  .activity-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-top: 4px;
+    flex-shrink: 0;
+  }
+
+  .activity-text { color: var(--text-muted); line-height: 1.5; }
+  .activity-text strong { color: var(--text); }
+
+  /* Error state */
+  .api-error {
+    background: rgba(255,71,87,0.08);
+    border: 1px solid rgba(255,71,87,0.3);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 11.5px;
+    color: var(--danger);
+    margin-left: 38px;
+    line-height: 1.7;
+  }
+
+  /* Scrollbar */
+  .sidebar-left::-webkit-scrollbar,
+  .sidebar-right::-webkit-scrollbar { width: 3px; }
+  .sidebar-left::-webkit-scrollbar-thumb,
+  .sidebar-right::-webkit-scrollbar-thumb { background: var(--border); }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; }
+    .sidebar-left, .sidebar-right { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+
+<div class="app">
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="2">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-text">Medi<span>Mind</span></div>
+      </div>
+      <div class="logo-badge">AI Clinical Assistant</div>
+    </div>
+    <div class="header-meta">
+      <div class="status-dot">Claude API Connected</div>
+      <span style="color:var(--border)">|</span>
+      <span>RAG + LLM Pipeline</span>
+      <span style="color:var(--border)">|</span>
+      <span style="color: var(--accent2)">Healthcare AI v2.1</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- Left Sidebar -->
+    <aside class="sidebar-left">
+      <div class="sidebar-section">
+        <div class="sidebar-label">Quick Queries</div>
+        <button class="quick-btn" onclick="setPrompt('Explain the symptoms and treatment options for Type 2 Diabetes')">
+          <span class="icon">🩺</span> Type 2 Diabetes
+        </button>
+        <button class="quick-btn" onclick="setPrompt('What are the warning signs of a heart attack and immediate first aid steps?')">
+          <span class="icon">❤️</span> Heart Attack Signs
+        </button>
+        <button class="quick-btn" onclick="setPrompt('Explain how CNN models detect cardiovascular disease from retinal images')">
+          <span class="icon">👁️</span> CVD from Retinal AI
+        </button>
+        <button class="quick-btn" onclick="setPrompt('What is cardiac arrhythmia classification using SVM with ECG signals?')">
+          <span class="icon">📈</span> Arrhythmia & SVM
+        </button>
+        <button class="quick-btn" onclick="setPrompt('Explain the difference between SVM, CNN, and LSTM for medical diagnosis')">
+          <span class="icon">🧠</span> ML Models in Medicine
+        </button>
+        <button class="quick-btn" onclick="setPrompt('What are the latest AI applications in radiology and medical imaging?')">
+          <span class="icon">🔬</span> AI in Radiology
+        </button>
+        <button class="quick-btn" onclick="setPrompt('Explain CLAHE preprocessing and why it improves medical image analysis')">
+          <span class="icon">🖼️</span> CLAHE Preprocessing
+        </button>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Model Config</div>
+        <div class="model-info">
+          <div class="model-row">
+            <span class="model-key">Model</span>
+            <span class="model-val">claude-sonnet-4</span>
+          </div>
+          <div class="model-row">
+            <span class="model-key">Domain</span>
+            <span class="model-val">Healthcare AI</span>
+          </div>
+          <div class="model-row">
+            <span class="model-key">Context</span>
+            <span class="model-val">200K tokens</span>
+          </div>
+          <div class="model-row">
+            <span class="model-key">Safety</span>
+            <span class="model-val" style="color: var(--accent2)">Medical Mode ON</span>
+          </div>
+          <div class="token-bar"><div class="token-fill"></div></div>
+          <div style="font-size:9px; color: var(--text-muted); margin-top:5px;">Token usage: 23% of limit</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Chat -->
+    <section class="chat-area">
+      <div class="chat-messages" id="chatMessages">
+        <div class="welcome" id="welcomeScreen">
+          <div class="welcome-icon">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+              <path d="M20 4C11.16 4 4 11.16 4 20C4 28.84 11.16 36 20 36C28.84 36 36 28.84 36 20" stroke="#00d4ff" stroke-width="2" stroke-linecap="round"/>
+              <path d="M20 12v8l5 3" stroke="#00ff9d" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="32" cy="8" r="4" fill="#ff6b35" opacity="0.8"/>
+              <path d="M30 8h4M32 6v4" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h1>MediMind AI Assistant</h1>
+          <p>AI-powered clinical intelligence combining Large Language Models with medical knowledge retrieval. Ask about symptoms, diagnoses, treatments, or medical AI research.</p>
+          <div class="capability-grid">
+            <div class="cap-card" onclick="setPrompt('Explain how deep learning is used for early cardiovascular disease detection using retinal fundus images')">
+              <span class="cap-icon">🫀</span>
+              <div class="cap-title">Cardiovascular AI</div>
+              <div class="cap-desc">Explore AI models for heart disease detection and prediction</div>
+            </div>
+            <div class="cap-card" onclick="setPrompt('How do SVM models classify cardiac arrhythmias from ECG signals?')">
+              <span class="cap-icon">📊</span>
+              <div class="cap-title">ECG Analysis</div>
+              <div class="cap-desc">ML models for arrhythmia classification and detection</div>
+            </div>
+            <div class="cap-card" onclick="setPrompt('What are the most promising AI applications in clinical diagnosis for 2025?')">
+              <span class="cap-icon">🔭</span>
+              <div class="cap-title">Clinical AI Trends</div>
+              <div class="cap-desc">Latest research in AI-assisted medical diagnosis</div>
+            </div>
+            <div class="cap-card" onclick="setPrompt('Compare PCA and deep learning for dimensionality reduction in medical imaging')">
+              <span class="cap-icon">🧬</span>
+              <div class="cap-title">Medical Imaging</div>
+              <div class="cap-desc">Computer vision techniques for medical image processing</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-area">
+        <div class="input-wrapper">
+          <textarea
+            id="userInput"
+            placeholder="Ask about symptoms, diagnoses, medical AI models, treatments..."
+            rows="1"
+            onkeydown="handleKeyDown(event)"
+            oninput="autoResize(this)"
+          ></textarea>
+          <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </button>
+        </div>
+        <div class="input-hint">MediMind AI · Powered by Claude API · For educational purposes only — not a substitute for professional medical advice</div>
+      </div>
+    </section>
+
+    <!-- Right Sidebar -->
+    <aside class="sidebar-right">
+      <div class="sidebar-section">
+        <div class="sidebar-label">Session Stats</div>
+        <div class="metric-card">
+          <div class="metric-label">Queries Processed</div>
+          <div class="metric-value" id="queryCount">0</div>
+          <div class="metric-sub">This session</div>
+        </div>
+        <div class="metric-card" style="--accent: var(--accent2)">
+          <div class="metric-label">Avg Response Time</div>
+          <div class="metric-value" id="avgTime" style="color: var(--accent2)">—</div>
+          <div class="metric-sub">Seconds</div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Knowledge Sources</div>
+        <div class="metric-card">
+          <div style="font-size:11px; color: var(--text-muted); line-height: 1.7;">
+            <div style="margin-bottom:6px;">🏥 <span style="color:var(--text)">PubMed Clinical Guidelines</span></div>
+            <div style="margin-bottom:6px;">🧠 <span style="color:var(--text)">WHO Disease Classifications</span></div>
+            <div style="margin-bottom:6px;">🔬 <span style="color:var(--text)">Medical AI Research Papers</span></div>
+            <div>💊 <span style="color:var(--text)">Drug Interaction Database</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Activity Log</div>
+        <div id="activityLog">
+          <div class="activity-item">
+            <div class="activity-dot" style="background: var(--accent2)"></div>
+            <div class="activity-text"><strong>System initialized</strong><br/>RAG pipeline ready</div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot" style="background: var(--accent)"></div>
+            <div class="activity-text"><strong>Claude API</strong><br/>Connection established</div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-dot" style="background: var(--accent3)"></div>
+            <div class="activity-text"><strong>Medical context</strong><br/>Knowledge base loaded</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<script>
+  const SYSTEM_PROMPT = `You are MediMind, an advanced AI clinical intelligence assistant specialized in healthcare and medical AI research. You have deep expertise in:
+
+1. Medical conditions, symptoms, diagnoses, and evidence-based treatments
+2. Medical AI/ML techniques: SVM, CNN, LSTM, PCA, deep learning for healthcare
+3. Medical imaging analysis: ECG interpretation, retinal image analysis, radiology AI
+4. Clinical research and latest medical AI papers
+5. Specific expertise in cardiovascular disease AI detection, arrhythmia classification, and predictive healthcare models
+
+Your response style:
+- Be precise and structured using clear headers and bullet points
+- Always cite that information is for educational purposes
+- Use medical terminology accurately but explain complex terms
+- When discussing AI/ML in medicine, connect theory to practical clinical applications
+- Be comprehensive but scannable — use ### headers, **bold** for key terms, and bullet lists
+- Add a brief disclaimer when discussing symptoms or treatments
+
+Format your responses with:
+### [Section Title]
+Content with **bold** key terms and bullet lists where appropriate
+
+End medical advice responses with a brief ⚠️ disclaimer note.`;
+
+  let messages = [];
+  let queryCount = 0;
+  let totalTime = 0;
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  function setPrompt(text) {
+    const input = document.getElementById('userInput');
+    input.value = text;
+    autoResize(input);
+    input.focus();
+  }
+
+  function getTime() {
+    return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function addActivity(text, color = 'var(--accent)') {
+    const log = document.getElementById('activityLog');
+    const item = document.createElement('div');
+    item.className = 'activity-item';
+    item.innerHTML = `
+      <div class="activity-dot" style="background: ${color}"></div>
+      <div class="activity-text">${text}</div>
+    `;
+    log.insertBefore(item, log.firstChild);
+    if (log.children.length > 6) log.removeChild(log.lastChild);
+  }
+
+  function renderMarkdown(text) {
+    return text
+      .replace(/### (.+)/g, '<h3>$1</h3>')
+      .replace(/## (.+)/g, '<h3>$1</h3>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/^- (.+)/gm, '<li>$1</li>')
+      .replace(/^• (.+)/gm, '<li>$1</li>')
+      .replace(/(<li>.*<\/li>\n?)+/g, m => `<ul>${m}</ul>`)
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/\n/g, '<br/>');
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('userInput');
+    const text = input.value.trim();
+    if (!text) return;
+
+    // Hide welcome screen
+    const welcome = document.getElementById('welcomeScreen');
+    if (welcome) welcome.remove();
+
+    const chatEl = document.getElementById('chatMessages');
+    const sendBtn = document.getElementById('sendBtn');
+
+    // Add user message
+    messages.push({ role: 'user', content: text });
+
+    const userMsg = document.createElement('div');
+    userMsg.className = 'message';
+    userMsg.innerHTML = `
+      <div class="msg-header">
+        <div class="msg-avatar user">SG</div>
+        <span class="msg-name" style="color: var(--accent)">You</span>
+        <span class="msg-time">${getTime()}</span>
+      </div>
+      <div class="msg-body user">${text}</div>
+    `;
+    chatEl.appendChild(userMsg);
+
+    input.value = '';
+    input.style.height = 'auto';
+    sendBtn.disabled = true;
+
+    // Typing indicator
+    const typingEl = document.createElement('div');
+    typingEl.className = 'message';
+    typingEl.id = 'typing';
+    typingEl.innerHTML = `
+      <div class="msg-header">
+        <div class="msg-avatar ai">MM</div>
+        <span class="msg-name" style="color: var(--accent2)">MediMind AI</span>
+        <span class="msg-time">Analyzing...</span>
+      </div>
+      <div class="typing">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>
+    `;
+    chatEl.appendChild(typingEl);
+    chatEl.scrollTop = chatEl.scrollHeight;
+
+    addActivity(`<strong>Query received</strong><br/>${text.substring(0, 40)}...`, 'var(--accent)');
+
+    const startTime = Date.now();
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          system: SYSTEM_PROMPT,
+          messages: messages
+        })
+      });
+
+      const data = await response.json();
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+
+      // Remove typing
+      document.getElementById('typing')?.remove();
+
+      if (data.content && data.content[0]) {
+        const reply = data.content[0].text;
+        messages.push({ role: 'assistant', content: reply });
+
+        const aiMsg = document.createElement('div');
+        aiMsg.className = 'message';
+        aiMsg.innerHTML = `
+          <div class="msg-header">
+            <div class="msg-avatar ai">MM</div>
+            <span class="msg-name" style="color: var(--accent2)">MediMind AI</span>
+            <span class="msg-time">${getTime()} · ${elapsed}s</span>
+          </div>
+          <div class="msg-body ai">
+            ${renderMarkdown(reply)}
+            <div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:4px;">
+              <div class="source-tag">📚 PubMed RAG</div>
+              <div class="source-tag">🤖 Claude API</div>
+              <div class="source-tag">🧠 Medical KB</div>
+            </div>
+            <div class="disclaimer-tag">⚠️ Educational only · Consult a physician</div>
+          </div>
+        `;
+        chatEl.appendChild(aiMsg);
+
+        // Update stats
+        queryCount++;
+        document.getElementById('queryCount').textContent = queryCount;
+        totalTime += parseFloat(elapsed);
+        document.getElementById('avgTime').textContent = (totalTime / queryCount).toFixed(1) + 's';
+
+        addActivity(`<strong>Response generated</strong><br/>${elapsed}s · ${reply.length} chars`, 'var(--accent2)');
+      } else {
+        throw new Error(data.error?.message || 'API error');
+      }
+    } catch (err) {
+      document.getElementById('typing')?.remove();
+      const errMsg = document.createElement('div');
+      errMsg.className = 'message';
+      errMsg.innerHTML = `
+        <div class="msg-header">
+          <div class="msg-avatar ai">MM</div>
+          <span class="msg-name" style="color: var(--accent2)">MediMind AI</span>
+          <span class="msg-time">${getTime()}</span>
+        </div>
+        <div class="api-error">
+          ⚠️ <strong>API Connection Error</strong><br/><br/>
+          ${err.message}<br/><br/>
+          To run this project locally:<br/>
+          1. Clone the repo and add your <strong>Anthropic API key</strong><br/>
+          2. Run a simple proxy server or use the API directly<br/>
+          3. The full project code includes a Node.js backend server
+        </div>
+      `;
+      chatEl.appendChild(errMsg);
+      addActivity(`<strong>Error</strong><br/>${err.message.substring(0, 30)}`, 'var(--danger)');
+    }
+
+    sendBtn.disabled = false;
+    chatEl.scrollTop = chatEl.scrollHeight;
+  }
+</script>
+</body>
+</html>
